@@ -18,112 +18,108 @@ from featureExtractors import *
 
 import random,util,math
 
+import random
+import util
+
 class QLearningAgent(ReinforcementAgent):
     """
       Q-Learning Agent
 
-      Functions you should fill in:
+      Implements the core Q-learning methods:
         - computeValueFromQValues
         - computeActionFromQValues
         - getQValue
         - getAction
         - update
 
-      Instance variables you have access to
-        - self.epsilon (exploration prob)
+      Uses instance variables:
+        - self.epsilon (exploration probability)
         - self.alpha (learning rate)
         - self.discount (discount rate)
 
-      Functions you should use
+      Available helper method:
         - self.getLegalActions(state)
-          which returns legal actions for a state
     """
     def __init__(self, **args):
-        "You can initialize Q-values here..."
+        """
+          Initialize Q-values and agent parameters.
+        """
         ReinforcementAgent.__init__(self, **args)
-
-        "*** YOUR CODE HERE ***"
-        self.values = util.Counter() # initialization
+        self.qValues = util.Counter()  # Stores Q-values as a dictionary
 
     def getQValue(self, state, action):
         """
-          Returns Q(state,action)
-          Should return 0.0 if we have never seen a state
-          or the Q node value otherwise
+          Returns Q(state, action).
+          If the (state, action) pair hasn't been encountered, return 0.0.
         """
-        "*** YOUR CODE HERE ***"
-        return self.values[(state, action)]
-
+        return self.qValues[(state, action)]
 
     def computeValueFromQValues(self, state):
         """
-          Returns max_action Q(state,action)
-          where the max is over legal actions.  Note that if
-          there are no legal actions, which is the case at the
-          terminal state, you should return a value of 0.0.
+          Compute the maximum Q-value for all legal actions in the state.
+          Returns 0.0 if there are no legal actions (terminal state).
         """
-        "*** YOUR CODE HERE ***"
-        maxValue, changed = float('-inf'), False
-        for action in self.getLegalActions(state):
-          q = self.getQValue(state,action) 
-          if q > maxValue:
-            maxValue = q
-            changed = True
-        if changed: return maxValue 
-        return 0.0 
-        
+        legalActions = self.getLegalActions(state)
+        if not legalActions:
+            return 0.0  # Terminal state
+        return max(self.getQValue(state, action) for action in legalActions)
 
     def computeActionFromQValues(self, state):
         """
-          Compute the best action to take in a state.  Note that if there
-          are no legal actions, which is the case at the terminal state,
-          you should return None.
+          Compute the best action in the state. Break ties randomly.
+          Returns None if there are no legal actions (terminal state).
         """
-        "*** YOUR CODE HERE ***"
-        actions = self.getLegalActions(state)
-        if len(actions) == 0: return None
-        q = self.computeValueFromQValues(state)
-        for action in actions:
-          if q == self.getQValue(state,action):
-            return action
-        return None
+        legalActions = self.getLegalActions(state)
+        if not legalActions:
+            return None  # Terminal state
         
+        # Find the maximum Q-value
+        maxQValue = self.computeValueFromQValues(state)
+        # Collect all actions with the maximum Q-value
+        bestActions = [action for action in legalActions if self.getQValue(state, action) == maxQValue]
+        
+        # Random tie-breaking
+        return random.choice(bestActions)
 
     def getAction(self, state):
         """
-          Compute the action to take in the current state.  With
-          probability self.epsilon, we should take a random action and
-          take the best policy action otherwise.  Note that if there are
-          no legal actions, which is the case at the terminal state, you
-          should choose None as the action.
-
-          HINT: You might want to use util.flipCoin(prob)
-          HINT: To pick randomly from a list, use random.choice(list)
+          Select an action based on epsilon-greedy policy:
+          - With probability epsilon, take a random action.
+          - Otherwise, take the best policy action.
+          Returns None if there are no legal actions.
         """
-        # Pick Action
         legalActions = self.getLegalActions(state)
-        action = None
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        if not legalActions:
+            return None  # Terminal state
 
-        return action
+        # Explore with probability epsilon
+        if util.flipCoin(self.epsilon):
+            return random.choice(legalActions)
+        
+        # Exploit the best action
+        return self.computeActionFromQValues(state)
 
     def update(self, state, action, nextState, reward):
         """
-          The parent class calls this to observe a
-          state = action => nextState and reward transition.
-          You should do your Q-Value update here
-
-          NOTE: You should never call this function,
-          it will be called on your behalf
+          Update Q-values using the Q-learning update rule:
+          Q(s, a) = (1 - alpha) * Q(s, a) + alpha * (reward + discount * max Q(s', a'))
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        oldQValue = self.getQValue(state, action)
+        futureQValue = self.computeValueFromQValues(nextState)  # max_a' Q(s', a')
+        # Q-learning update formula
+        newQValue = (1 - self.alpha) * oldQValue + self.alpha * (reward + self.discount * futureQValue)
+        self.qValues[(state, action)] = newQValue
 
     def getPolicy(self, state):
+        """
+          Returns the best action in the state according to the current Q-values.
+        """
         return self.computeActionFromQValues(state)
 
     def getValue(self, state):
+        """
+          Returns the maximum Q-value for the state over all legal actions.
+        """
         return self.computeValueFromQValues(state)
 
 
