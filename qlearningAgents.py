@@ -178,6 +178,7 @@ class ApproximateQAgent(PacmanQAgent):
         """
         "*** YOUR CODE HERE ***"
         features, qValue = self.featExtractor.getFeatures(state, action), 0
+        # compute new values
         for feature in features:
             w = self.weights[feature]
             qValue += features[feature] * w
@@ -189,11 +190,12 @@ class ApproximateQAgent(PacmanQAgent):
            Should update your weights based on transition
         """
         "*** YOUR CODE HERE ***"
+        # equation plug in with labeled components
         qPrime = self.computeValueFromQValues(nextState)
         nextValue = reward + self.discount * qPrime
         originalValue = self.getQValue(state, action)
         difference = nextValue - originalValue
-
+        # update weights
         features = self.featExtractor.getFeatures(state, action)
         for feature in features:
             w = self.weights[feature]
