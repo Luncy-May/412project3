@@ -104,8 +104,10 @@ class QLearningAgent(ReinforcementAgent):
         legalActions = self.getLegalActions(state)
         action = None
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
-
+        if util.flipCoin(self.epsilon):
+            action = random.choice(legalActions)
+        else:
+            action = self.computeActionFromQValues(state)
         return action
 
     def update(self, state, action, nextState, reward):
@@ -118,7 +120,9 @@ class QLearningAgent(ReinforcementAgent):
           it will be called on your behalf
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        constant = (1 - self.alpha) * self.getQValue(state, action)
+        learningRate = self.alpha * (reward + self.discount * self.computeValueFromQValues(nextState))
+        self.values[(state, action)] = constant + learningRate
 
     def getPolicy(self, state):
         return self.computeActionFromQValues(state)
@@ -181,14 +185,28 @@ class ApproximateQAgent(PacmanQAgent):
           where * is the dotProduct operator
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        features, qValue = self.featExtractor.getFeatures(state, action), 0
+        for feature in features:
+            w = self.weights[feature]
+            qValue += features[feature] * w
+        return qValue
+        
 
     def update(self, state, action, nextState, reward):
         """
            Should update your weights based on transition
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        qPrime = self.computeValueFromQValues(nextState)
+        nextValue = reward + self.discount * qPrime
+        originalValue = self.getQValue(state, action)
+        difference = nextValue - originalValue
+
+        features = self.featExtractor.getFeatures(state, action)
+        for feature in features:
+            w = self.weights[feature]
+            self.weights[feature] = w + (self.alpha * features[feature] * difference)
+
 
     def final(self, state):
         "Called at the end of each game."
